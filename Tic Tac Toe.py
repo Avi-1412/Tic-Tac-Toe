@@ -23,51 +23,35 @@ def hay_empate(tablero):
 def movimientos_posibles(tablero):
     return [i for i, casilla in enumerate(tablero) if casilla == " "]
 
-# MINIMAX
-# evalúa el tablero
-def minimax(tablero, es_max):
-    ganador = hay_ganador(tablero)
-    if ganador == "X": return 1   # IA gana
-    if ganador == "O": return -1  # humano gana
-    if hay_empate(tablero): return 0  # empate
-
-    if es_max:  # turno IA (X) busca maximizar 
-        mejor = -999 
-        # DIVIDE Y VENCERAS: prueba cada movimiento posible
-        for mov in movimientos_posibles(tablero):
-            tablero[mov] = "X"           # hace un movimiento
-            puntaje = minimax(tablero, False) 
-            tablero[mov] = " "           # deshace movimiento
-            mejor = max(mejor, puntaje)  # combina resultados
-        return mejor
-    else:  # turno humano buscar minimizar a la IA
-        mejor = 999
-        for mov in movimientos_posibles(tablero):
-            tablero[mov] = "O" #marca la casilla que elige el humano 
-            puntaje = minimax(tablero, True)# hora es turno de la IA (es_max=True)
-            tablero[mov] = " "
-            mejor = min(mejor, puntaje)
-        return mejor
-
-# MEJOR MOVIMIENTO de la IA 
-# Busca el mejor movimiento para la IA la tramposota
-def mejor_movimiento(tablero):
-    mejor_puntaje = -999
-    movimiento = None
+# IA con heurística (sin backtracking) :D
+def heuristica_movimiento(tablero):
+    # 1. Ganar si es posible
     for mov in movimientos_posibles(tablero):
-        # Simulamos que la IA pone una "X"aqui
         tablero[mov] = "X"
-        # Calcula puntaje de ese movimiento
-        # Evalúan todas las posibles respuestas
-        puntaje = minimax(tablero, False)  # False porque va el humano
-        # Deshacemos el movimiento para probar otro
+        if hay_ganador(tablero) == "X":
+            tablero[mov] = " "
+            return mov
         tablero[mov] = " "
-        # Si el puntaje de este mov es mejor que el anterior, lo actualiza
-        if puntaje > mejor_puntaje:
-            mejor_puntaje = puntaje
-            movimiento = mov  # Guarda la posición del mejor mov
-    # IA coloca su "X"
-    return movimiento
+    # 2. Bloquear si el humano puede ganar
+    for mov in movimientos_posibles(tablero):
+        tablero[mov] = "O"
+        if hay_ganador(tablero) == "O":
+            tablero[mov] = " "
+            return mov
+        tablero[mov] = " "
+    # 3. Tomar el centro si está libre
+    if tablero[4] == " ":
+        return 4
+    # 4. Tomar una esquina si está libre
+    for mov in [0, 2, 6, 8]:
+        if tablero[mov] == " ":
+            return mov
+    # 5. Tomar cualquier lateral
+    for mov in [1, 3, 5, 7]:
+        if tablero[mov] == " ":
+            return mov
+    # Si no hay movimientos posibles (debería ser empate)
+    return None
 
 # IMPRESIÓN TABLERO
 def imprimir_tablero(tablero):
@@ -111,8 +95,9 @@ def main():
             break
 
         # Turno IA
-        ia_mov = mejor_movimiento(tablero)  # usa Minimax para decidir donde poner su x
-        tablero[ia_mov] = "X"
+        ia_mov = heuristica_movimiento(tablero)  # usa heurística en vez de minimax
+        if ia_mov is not None:
+            tablero[ia_mov] = "X"
     system("cls")
     imprimir_tablero(tablero)# imprime el tablero con la actualizacion del juego
     ganador = hay_ganador(tablero)
